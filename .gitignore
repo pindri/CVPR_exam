@@ -1,5 +1,6 @@
 dataset/
 __pycache__/
 .ipynb_checkpoints/
+material/
 test_frame
 train_frame
