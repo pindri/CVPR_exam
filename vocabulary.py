@@ -1,4 +1,4 @@
-# Define function to read images from a given path,
+# Define functions to read images from a given path,
 # compute the SURF descriptors and build a visual vocabulary,
 # representing each image as an histogram over the visual words. 
 
@@ -10,11 +10,19 @@ from sklearn.cluster import KMeans
 import pandas as pd
 
 
-# Read image and directory (image category)
-
 def read_image(dir_path):
-    """
-    TBD iterator
+    """Generator function for reading image from disk.
+
+    Parameters
+    ----------
+    dir_path : str
+        Directory path.
+
+    Yields
+    ------
+    str, str
+        Image path and directory name.
+    
     """
     
     for subdir, dirs, files in os.walk(dir_path):
@@ -27,8 +35,22 @@ def read_image(dir_path):
 
                 
 def compute_descriptors(dir_path):
-    """
-    TBD, note on ORB instead of SIFT/SURF
+    """Computes SURF descriptors for images and stores them in a Pandas
+    Dataframe.
+
+    The images should be stored in folders representing their labels. The
+    parameter should be the path of the directory containing such folders.
+
+    Parameters
+    ----------
+    dir_path : str
+        Path where the images are stored.
+
+    Returns
+    -------
+    Pandas Dataframe
+        Contains the images' ID, their label and SURF descriptors.
+
     """
     
     # Lists to contain data.
@@ -64,8 +86,22 @@ def compute_descriptors(dir_path):
 
 
 def k_means_words(descriptors_df, n_clusters, num_descriptors):
-    """
-    TBD
+    """Performs K-means clustering on a set of descriptors.
+
+    Parameters
+    ----------
+    descriptors_df
+        Pandas Dataframe containing descriptors.
+    n_clusters : int
+        Number of desired clusters.
+    num_descriptors : int
+        Number of descriptors.
+
+    Returns
+    -------
+    KMeans object
+        Contains the info on the cluster, along with its centroids.
+
     """
     
     # Sample `num_descriptors` descriptors.
@@ -81,8 +117,20 @@ def k_means_words(descriptors_df, n_clusters, num_descriptors):
 
 
 def find_nearest_term(descriptor, dictionary):
-    """
-    TBD
+    """Computes the nearest dictionary term for a given descriptor.
+
+    Parameters
+    ----------
+    descriptor
+        Multidimensional point representing the descriptor.
+    dictionary
+        Set of multidimensional words, representing a descriptor vocabulary.
+
+    Returns
+    -------
+    int
+        Index of the closest dictionary term.
+
     """
     distances = [lin.norm(descriptor - term) for term in dictionary]
     
@@ -91,9 +139,27 @@ def find_nearest_term(descriptor, dictionary):
 
 
 def compute_histogram(descriptors_df, kmeans):
+    """Computes the visual words histograms for the provided dataset.
+
+    Extracts visual dictionary from a KMeans object and uses them as a 
+    dictionary. For each image, a histogram over the dictionary is built:
+    for each descriptor, the value of the closest dictionary term bin is
+    increased by one.
+
+    Parameters
+    ----------
+    descriptors_df
+        Dataframe containing descriptors.
+    kmeans
+        KMeans object containing dictionary words.
+
+    Returns
+    -------
+    list
+        List of arrays, each array is a histogram.
+
     """
-    TBD
-    """
+
     # Estract visual words (centroids) from kmeans computation.
     dictionary = kmeans.cluster_centers_
     

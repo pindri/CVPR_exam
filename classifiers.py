@@ -1,10 +1,116 @@
+# Implements different classifiers for image classification, along with
+# their auxiliary functions to compute distances.
+
 from scipy.stats import wasserstein_distance
 import numpy as np
 import numpy.linalg as lin
 import pandas as pd
 import cv2
+from sklearn.svm import SVC
+from sklearn.multiclass import OneVsRestClassifier
+
+
+# Distances.
+
+
+def earth_mover_distance(hist_1, hist_2):
+    """Implements the Earth Mover Distance
+
+    Parameters
+    ----------
+    hist_1 : np.array
+        First histogram as array of bins.
+    hist_2 : np.array
+        Second histogram as array of bins.
+
+    Returns
+    -------
+    fload
+        Wasserstein distance (EMD) between the histograms.
+
+    """
+    
+    return wasserstein_distance(hist_1, hist_2)
+    
+
+
+def chi_2_distance(hist_1, hist_2):
+    """Implements the Chi Squared distance.
+
+    Note
+    ----
+    It does not follow the cv2 formula which is not symmetric.
+
+    Parameters
+    ----------
+    hist_1 : np.array
+        First histogram as array of bins.
+    hist_2 : np.array
+        Second histogram as array of bins.
+
+    Returns
+    -------
+    fload
+        Chi Squared distance between the histograms.
+
+    """
+
+    n_bins = len(hist_1)
+    
+    # Mask for non-zero entries in at least one of the histograms.
+    non_zero = [index for index in range(n_bins)
+                if (hist_1[index] != 0 and hist_2[index] != 0)]
+    
+    distance = 0.5 * np.sum((hist_1[non_zero] - hist_2[non_zero])**2 /
+                            (hist_1[non_zero] + hist_2[non_zero]))
+    
+    return distance
+
+
+
+def hamming_distance(arr_1, arr_2):
+    """Computes the Hamming distance between two bit strings.
+
+    Parameters
+    ---------
+    arr_1 : str
+        First bit string.
+    arr_2 : str
+        Second bit string.
+
+    Returns
+    -------
+    fload
+        Hamming distance between the strings.
+
+    """
+
+    assert (len(arr_1) == len(arr_2)), "Arrays must have the same length."
+    
+    return sum(c1 != c2 for c1, c2 in zip(arr_1, arr_2))
+
+
+
+# Classifiers.
+
 
 def nn_classifier(train_df, test_df):
+    """Nearest neighbour classifier.
+
+    Parameters
+    ----------
+    train_df
+        Dataframe containing the training data.
+    test_df
+        Dataframe containing the test data.
+
+    Returns
+    -------
+    list, list
+        List of true labels and list of predicted ones.
+
+    """
+
     true_labels = test_df['label'].to_numpy()
     predicted_labels = []
     
@@ -22,11 +128,27 @@ def nn_classifier(train_df, test_df):
 
 
 
-from sklearn.svm import SVC
-
-
-
 def linear_SVM_classifier(train_df, test_df):
+    """Multi-class Support Vector Machine classifier using a linear kernel.
+
+    Implements a SVM for multi-class classification using the one-vs-rest
+    approach, training a classifier for each class. For each image,
+    a prediction is made with all the classifiers: the class corresponding
+    to the largest hyperplane distance is the predicted one.
+
+    Parameters
+    ----------
+    train_df
+        Dataframe containing the training data.
+    test_df
+        Dataframe containing the test data.
+
+    Returns
+    -------
+    list, list
+        List of true labels and list of predicted ones.
+
+    """
     
     true_labels = test_df['label'].to_numpy()
     predicted_labels = []
@@ -50,9 +172,8 @@ def linear_SVM_classifier(train_df, test_df):
         target = np.array(["1" if  label == current_label else
                            "-1" for label in train_labels])
         c = c.fit(histo, target)
-        
+
     # Predicting label for each test image.
-    
     for test_index, test_row in test_df.iterrows():
         distances = []
         # Compute real valued score with each classifier.
@@ -64,37 +185,60 @@ def linear_SVM_classifier(train_df, test_df):
         # The predicted label: maximum distance from hyperplane.
         predicted_labels.append(classes[np.argmax(distances)])
     
-    
     return true_labels, np.array(predicted_labels)
 
 
-def chi_2_distance(hist_1, hist_2):
-    # Note, not using the cv2 formula since it is not really a distance.
-    n_bins = len(hist_1)
-    
-    non_zero = [index for index in range(n_bins)
-                if (hist_1[index] != 0 and hist_2[index] != 0)]
-    
-    distance = 0.5 * np.sum((hist_1[non_zero] - hist_2[non_zero])**2 /
-                            (hist_1[non_zero] + hist_2[non_zero]))
-    
-    return distance
-
-
-def earth_mover_distance(hist_1, hist_2):
-    
-    return wasserstein_distance(hist_1, hist_2)
-    
-
 
 def gaussian_kernel(hist_1, hist_2, dist_function, sigma = 0.1):
+    """Implements the computation of Gaussian kernel.
+
+    Parameters
+    ----------
+    hist_1 : np.array
+        First histogram as array of bins.
+    hist_2 : np.array
+        Second histogram as array of bins.
+    dist_function
+        Function to compute distances between histograms.
+    sigma
+        Sigma value for the Gaussian kernel.
+
+    Returns
+    -------
+    float
+        Value of the kernel for the two histograms.
+
+    """
+
     distance = dist_function(hist_1, hist_2)
+
     return np.exp( - distance / (2 * sigma ** 2 ))
+
 
 
 def gram_matrix(histograms_1, histograms_2,
                 kernel_function = gaussian_kernel,
                 dist_function = chi_2_distance):
+    """Computes the Gram matrix for two sets of histograms.
+
+    Parameters
+    ----------
+    histograms_1
+        First list of histograms.
+    histograms_2
+        Second list of histograms.
+    kernel_function
+        Function that implements the computation of a kernel for a given
+        distance.
+    dist_function
+        Function to compute distances between histograms.
+
+    Returns
+    -------
+    np.array
+        A 2D numpy array corresponding to the Gram matrix.
+
+    """
     
     gram = np.zeros((histograms_1.shape[0], histograms_2.shape[0]))
     
@@ -106,11 +250,30 @@ def gram_matrix(histograms_1, histograms_2,
     return gram
 
 
-from sklearn.multiclass import OneVsRestClassifier
 
 def gaussian_SVM_classifier(train_df, test_df,
                             kernel_function = gaussian_kernel,
                             dist = 'chi'):
+    """Multi-class Support Vector Machine classifier using a Gaussian kernel.
+
+    Implements a SVM for multi-class classification using the one-vs-rest
+    approach, training a classifier for each class. For each image,
+    a prediction is made with all the classifiers: the class corresponding
+    to the largest hyperplane distance is the predicted one.
+
+    Parameters
+    ----------
+    train_df
+        Dataframe containing the training data.
+    test_df
+        Dataframe containing the test data.
+
+    Returns
+    -------
+    list, list
+        List of true labels and list of predicted ones.
+
+    """
     
     if dist == 'chi':
         dist_function = chi_2_distance
@@ -145,15 +308,32 @@ def gaussian_SVM_classifier(train_df, test_df,
 
 
 
-def hamming_distance(arr_1, arr_2):
-    """Calculate the Hamming distance between two bit strings"""
-    assert (len(arr_1) == len(arr_2)), "Arrays must have the same length."
-    return sum(c1 != c2 for c1, c2 in zip(arr_1, arr_2))
 
 
 def ecoc_classifier(train_df, test_df, n_classifiers = 25):
-    """
-    TBD
+    """Multi-class Support Vector Machine classifier using the Error
+    Correcting Output Codes approach.
+
+    Learns several binary classifiers following the ECOC approach,
+    representing each class as a bit string.
+    For a test image, computes the value of all the classifiers and
+    stores the result as a bit string: using the Hamming distance,
+    the label of the closest class is used as a prediction.
+
+    Parameters
+    ----------
+    train_df
+        Dataframe containing the training data.
+    test_df
+        Dataframe containing the test data.
+    n_classifiers : int
+        Number of classifiers for the ECOC approach.
+
+    Returns
+    -------
+    list, list
+        List of true labels and list of predicted ones.
+
     """
     
     true_labels = test_df['label'].to_numpy()

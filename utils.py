@@ -1,4 +1,5 @@
-# Define context manager to measure execution time.
+# Define context manager to measure execution time
+# and handy function to plot confusion matrices.
 
 import time
 import matplotlib.pyplot as plt
@@ -9,9 +10,15 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 class codeTimer:
     """
     Context manager, measures and prints the execution time of a function.
+
+    Parameters
+    ----------
+    name : str
+        Name the user assings to the procedure the context manager is timing.
+
     """
     
-    def __init__(self, name=None):
+    def __init__(self, name = None):
         self.name = "Executed '"  + name + "'. " if name else ""
 
     def __enter__(self):
@@ -23,12 +30,26 @@ class codeTimer:
         print('%s Elapsed time: %0.6fs' % (str(self.name), self.elapsed))
         
         
-        
-
 
 def plot_confusion_matrix(true_labels, predicted_labels,
                           title = "Confusion matrix", cmap = plt.cm.gray_r,
-                          filename = "plot.pdf"):
+                          filename = None):
+    """Utility function to plot a confusion matrix
+
+    Parameters
+    ----------
+    true_labels : list
+        List of strings containing the true labels.
+    predicted_labels : list
+        List of strings containing the predicted labels.
+    title : str
+        Title of the plot.
+    cmap
+        Colormap of the plot.
+    filename
+        Filename with which the plot will be stored on disk
+
+    """
     
     labels = np.unique(true_labels)
     
@@ -70,6 +91,7 @@ def plot_confusion_matrix(true_labels, predicted_labels,
                                        np.sum(conf_matrix)))
 
     # Save and show.
-    #fig.savefig(filename)
+    if filename:
+        fig.savefig(filename)
     plt.show()
     
