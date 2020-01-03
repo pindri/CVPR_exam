@@ -308,8 +308,6 @@ def gaussian_SVM_classifier(train_df, test_df,
 
 
 
-
-
 def ecoc_classifier(train_df, test_df, n_classifiers = 25):
     """Multi-class Support Vector Machine classifier using the Error
     Correcting Output Codes approach.

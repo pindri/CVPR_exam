@@ -59,7 +59,7 @@ def plot_confusion_matrix(true_labels, predicted_labels,
     conf_matrix = conf_matrix / np.sum(conf_matrix, axis = 1)
     
     # Divide canvas using gridspec.
-    fig, ax = plt.subplots(figsize = (6, 6))
+    fig, ax = plt.subplots()
     
     # Confusion matrix.
     im = ax.imshow(conf_matrix, cmap = cmap, vmin = 0, vmax = 1)
@@ -92,6 +92,6 @@ def plot_confusion_matrix(true_labels, predicted_labels,
 
     # Save and show.
     if filename:
-        fig.savefig(filename)
+        fig.savefig(filename, bbox_inches='tight')
     plt.show()
     
