@@ -178,7 +178,7 @@ def linear_SVM_classifier(train_df, test_df):
         distances = []
         # Compute real valued score with each classifier.
         for idx, c in enumerate(clf):
-            # Compute distances from hyperplanes
+            # Compute distances from hyperplanes.
             distances.append(c.decision_function(test_row['histogram']
                                                  .reshape(1, -1) / 
                                                  lin.norm(c.coef_)))
