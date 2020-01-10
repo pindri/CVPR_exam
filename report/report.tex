@@ -52,7 +52,7 @@
 
   \section*{2. Histogram representation}
 
-  Each of the \( k \) cluster centroids is interpreted as a visual word, thus constituing a vocabulary. Training set images can now be represented as histograms having \( k \) bins: for each image, the code cycles through the list of its descriptors and increases by one the bin correspoinding to the closest word in the vocabulary (that is, the closest centroid). Euclidian norm is used to compute all the distances while \texttt{np.argmin} is used to identify the smallest one. Since different images might have a different number of descriptors, the histograms are then normalised to make them comparable with each other. The normalised histograms are added as a column to the descriptors dataframe.
+  Each of the \( k \) cluster centroids is interpreted as a visual word and used to build a vocabulary. Training set images can now be represented as histograms having \( k \) bins: for each image, the code cycles through the list of its descriptors and increases by one the bin corresponding to the closest word in the vocabulary (that is, the closest centroid). Euclidean norm is used to compute all the distances while \texttt{np.argmin} is used to identify the smallest one. Since different images might have a different number of descriptors, the histograms are then normalised to make them comparable with each other. The normalised histograms are added as a column to the descriptors dataframe.
 
   \subsection*{Results}
 
@@ -81,9 +81,9 @@
 
   \section*{3. Nearest Neighbour classifier}
 
-  Test images can be classified using a nearest neighbour classifier. In particular, histograms for the test images are computed as previously done for the training set (not that, in this step, the visual vocabulary must not be rebuilt: the training one is used to compute the histograms). Then the histogram of a test image is compared with all the training histograms: the classifier assigns to the test image the label corresponding to the closest train histogram. Distances between histograms can be computed using the \textit{Earth Mover Distance}, implemented in \texttt{scipy.stats.wasserstein\_distance}.
+  Test images can be classified using a nearest neighbour classifier. In particular, histograms for the test images are computed as previously done for the training set (not that, in this step, the visual vocabulary must not be rebuilt: the training one is used to compute the histograms). Then, the histogram of a test image is compared with all the training histograms: the classifier assigns to the test image the label corresponding to the closest train histogram. Distances between histograms can be computed using the \textit{Earth Mover Distance}, implemented in \texttt{scipy.stats.wasserstein\_distance}.
   
-  It should be noted that the histograms for the test set are precomputed once and then fed to different classifiers, reducing classification overhead. An alternative approach would be to designate the computation to each of the classifiers. All the implemented classifiers present a similar interface, accepting the train and test dataframes as inputs and returning both the true and the predicted labels for the test set. In the following sections \( k \) will denote the number of clusters considered.
+  It should be noted that the histograms for the test set are precomputed once and then fed to different classifiers, reducing classification overhead. An alternative approach would be to designate the computation to each classifiers. All the implemented classifiers present a similar interface, accepting the train and test dataframes as inputs and returning both the true and the predicted labels for the test set. In the following sections \( k \) will denote the number of clusters which corresponds to the vocabulary length.
 
   \subsection*{Results}
 
@@ -98,7 +98,7 @@
       Clusters (\( k \)) & Accuracy \\
       \midrule
       24  & 0.11 \\
-      48  & tbd \\
+      48  & 0.15 \\
       96  & 0.18 \\
       \bottomrule
     \end{tabular}
@@ -112,7 +112,7 @@
 
   In this steps a multi-class Support Vector Machine classifier with linear kernel was implemented. In particular, the SVM is implemented using the one-vs-rest approach, training a binary SVM for each of the classes to separate it from the remaining ones. The normalised histograms constitute the input vectors. To overcome the unclassifiable regions problem, distance from the separating hyperplanes is used as the classification criterion: the image is assigned to the class corresponding to the most distant SVM separating hyperplane.
 
-  Concerning implementation details, the SVM linar classifier is provided by \texttt{sklearn.svm.SVC} using \texttt{kernel = linear}. The distance from the hyperplane is computed, as suggested by the documentation, taking the value of the classifier \texttt{decision\_function} on the histogram and dividing it by the classifier \texttt{coef\_}.
+  Concerning implementation details, the SVM linear classifier is provided by \texttt{sklearn.svm.SVC} using \texttt{kernel = linear}. The distance from the hyperplane is computed, as suggested by the documentation, taking the value of the classifier \texttt{decision\_function} on the histogram and dividing it by the classifier \texttt{coef\_}.
 
   \subsection*{Results}
 
@@ -127,13 +127,13 @@
       Clusters (\( k \)) & Accuracy \\
       \midrule
       24  & 0.21 \\
-      48  & tbd \\
+      48  & 0.31 \\
       96  & 0.39 \\
       \bottomrule
     \end{tabular}
   \end{figure}
 
-  The linear SVM approach shows a sensible improvement with respect to the nearest neighbour classifier. In particular, outdoor settings such as \textit{forest}, \textit{mountain} and \textit{suburb} are quite accurately labelled.
+  The linear SVM approach shows a sensible improvement with respect to the nearest neighbour classifier, doubling its accuracy for all the tested values of \( k \). In particular, outdoor settings such as \textit{forest}, \textit{mountain} and \textit{suburb} are quite accurately labelled.
   
 
 
@@ -156,15 +156,15 @@
       Clusters (\( k \)) & Accuracy \\
       \midrule
       24  & 0.39 \\
-      48  & tbd \\
-      96  & 0.42 \\
+      48  & 0.42 \\
+      96  & 0.44 \\
       \bottomrule
     \end{tabular}
   \end{figure}
 
-  The Gaussian SVM apprach with \( \chi^2 \) distance provides better results than the linear SVM. In particular the \textit{suburb} and \textit{forest} classes are almost perfectly labelled. The classifier still struggles with indoor settings such as \textit{bedroom}, \textit{kitchen}, and \textit{living room}.
+  The Gaussian SVM approach with \( \chi^2 \) distance provides better results than the linear SVM. In particular the \textit{suburb} and \textit{forest} classes are almost perfectly labelled. The classifier still struggles with indoor settings such as \textit{bedroom}, \textit{kitchen}, and \textit{living room}.
 
-  A Gaussian SVM with Earth Mover Distance was tested as well: it delivers much worse results, reaching \( 0.21 \) accuracy for \( k = 96 \).
+  A Gaussian SVM with Earth Mover Distance was tested as well: it delivers much worse results, reaching \( 0.21 \) accuracy for \( k = 48 \).
 
 
   
@@ -217,7 +217,7 @@
       Clusters (\( k \)) & Accuracy \\
       \midrule
       24  & 0.40 \\
-      48  & tbd \\
+      48  & 0.46 \\
       96  & 0.49 \\
       \bottomrule
     \end{tabular}
