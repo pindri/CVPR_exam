@@ -24,7 +24,7 @@
 
   \section*{1. Visual vocabulary}
   
-  The first step requires the construction of a visual vocabulary. Images are read using a generator that yields the image path and its folder name (that is, its class label). Then, for each of the images in the training set, the SIFT algorithm is used to extract keypoints and compute descriptors. The number of features to be retained can be passed as an argument, but was left at the default value (which, incidentally, is not clearly specified by the documentation). The descriptors and the labels are associated to an image ID and everything is stored in a Pandas \texttt{Dataframe}. As required, \( 1000000 \) descriptors are sampled and clustered using \( k \)-means. The \texttt{sklearn.cluster.KMeans} function returns an object containing info on the clusters including the coordinates of the centroids. Different numbers of clusters have been tested.
+  The first step requires the construction of a visual vocabulary. Images are read using a generator that yields the image path and its folder name (that is, its class label). Then, for each of the images in the training set, the SIFT algorithm is used to extract keypoints and compute \( 128 \)-dimensional descriptors. The number of features to be retained can be passed as an argument, but was left at the default value (which, incidentally, is not clearly specified by the documentation). The descriptors and the labels are associated to an image ID and everything is stored in a Pandas \texttt{Dataframe}. As required, \( 1000000 \) descriptors are sampled and clustered using \( k \)-means. The \texttt{sklearn.cluster.KMeans} function returns an object containing info on the clusters including the coordinates of the centroids. Different numbers of clusters have been tested.
   
 
   \subsection*{Results}
@@ -54,51 +54,52 @@
 
   Each of the \( k \) cluster centroids is interpreted as a visual word, thus constituing a vocabulary. Training set images can now be represented as histograms having \( k \) bins: for each image, the code cycles through the list of its descriptors and increases by one the bin correspoinding to the closest word in the vocabulary (that is, the closest centroid). Euclidian norm is used to compute all the distances while \texttt{np.argmin} is used to identify the smallest one. Since different images might have a different number of descriptors, the histograms are then normalised to make them comparable with each other. The normalised histograms are added as a column to the descriptors dataframe.
 
-  \subsection*{Results TBD}
+  \subsection*{Results}
+
+  The dataframe now contains, for each image, the list of descriptors (as a list of \( 128 \)-dimensional arrays) and the list of histogram bins.
 
 	\begin{table}[H] 
 		\centering
-		\caption*{Training set, descriptors dataframe.}
+		\caption*{Training set, descriptors dataframe with histograms.}
 		\rowcolors{1}{}{gray!10}
-		\begin{tabular}{lll}
+		\begin{tabular}{llll}
 			\toprule
-      image\_id & descriptor & label \\
+      image\_id & label & descriptor & histogram \\
       \midrule
-      3 &  [8.0, 2.0, 46.0, 42.0, 2.0, 19.0, ...    &  Industrial \\
-      3 &  [18.0, 2.0, 0.0, 0.0, 4.0, 49.0, ...     &  Industrial \\
-      3 &  [10.0, 1.0, 0.0, 20.0, 4.0, 14.0, ...    &  Industrial \\
-      3 &  [57.0, 33.0, 121.0, 3.0, 0.0, 1.0, ...   &  Industrial \\
-      4 &  [16.0, 20.0, 8.0, 4.0, 24.0, 17.0, ...   &  Industrial \\
-      4 &  [35.0, 9.0, 11.0, 27.0, 0.0, 0.0, ...    &  Industrial \\
-      4 &  [38.0, 0.0, 1.0, 9.0, 4.0, 0.0, 0.0, ... &  Industrial \\
+      0 &  Industrial &  [[1.0, 0.0, 0.0,...    &  [0.008, 0.017,... \\
+      1 &  Industrial &  [[0.0, 1.0, 34.0,...   &  [0.013, 0.041,... \\
+      2 &  Industrial &  [[0.0, 0.0, 0.0,...    &  [0.019, 0.002,.... \\
+      3 &  Industrial &  [[6.0, 2.0, 2.0,...    &  [0.013, 0.015,... \\
+      4 &  Industrial &  [[16.0, 20.0, 8.0,...  &  [0.026, 0.033,... \\
+      5 &  Industrial &  [[102.0, 9.0, 18.0,... &  [0.013, 0.00,... \\
+      6 &  Industrial &  [[23.0, 69.0, 13.0,... &  [0.006, 0.00,... \\
+      7 &  Industrial &  [[86.0, 7.0, 1.0,...   &  [0.014, 0.008,.... \\
 			\bottomrule
 		\end{tabular}
 	\end{table}
-
 
 
   \section*{3. Nearest Neighbour classifier}
 
   Test images can be classified using a nearest neighbour classifier. In particular, histograms for the test images are computed as previously done for the training set (not that, in this step, the visual vocabulary must not be rebuilt: the training one is used to compute the histograms). Then the histogram of a test image is compared with all the training histograms: the classifier assigns to the test image the label corresponding to the closest train histogram. Distances between histograms can be computed using the \textit{Earth Mover Distance}, implemented in \texttt{scipy.stats.wasserstein\_distance}.
   
-  It should be noted that the histograms for the test set are precomputed once and then fed to different classifiers, reducing classification overhead. An alternative approach would be to designate the computation to each of the classifiers. All the implemented classifiers present a similar interface, accepting the train and test dataframes as inputs and returning both the true and the predicted labels for the test set.
+  It should be noted that the histograms for the test set are precomputed once and then fed to different classifiers, reducing classification overhead. An alternative approach would be to designate the computation to each of the classifiers. All the implemented classifiers present a similar interface, accepting the train and test dataframes as inputs and returning both the true and the predicted labels for the test set. In the following sections \( k \) will denote the number of clusters considered.
 
   \subsection*{Results}
 
   \begin{figure}[H]
     \centering
-    \caption*{Confusion matrix (for \( k = 48 \)) and accuracy for different values of \( k \).}
-    \raisebox{-6em}{\includegraphics[width=.55\linewidth]{img/nn.pdf}}
+    \caption*{Confusion matrix (for \( k = 96 \)) and accuracy for different values of \( k \).}
+    \raisebox{-7em}{\includegraphics[width=.55\linewidth]{img/nn.pdf}}
     \quad\quad\quad
 		\rowcolors{1}{}{gray!10}
     \begin{tabular}[b]{cc}
 			\toprule
       Clusters (\( k \)) & Accuracy \\
       \midrule
-      24  & tbd \\
-      48  & 0.16 \\
-      96  & tbd \\
-      192 & tbd \\
+      24  & 0.11 \\
+      48  & tbd \\
+      96  & 0.18 \\
       \bottomrule
     \end{tabular}
   \end{figure}
@@ -117,25 +118,27 @@
 
   \begin{figure}[H]
     \centering
-    \caption*{Confusion matrix (for \( k = 48 \)) and accuracy for different values of \( k \).}
-    \raisebox{-6em}{\includegraphics[width=.55\linewidth]{img/linsvm.pdf}}
+    \caption*{Confusion matrix (for \( k = 96 \)) and accuracy for different values of \( k \).}
+    \raisebox{-7em}{\includegraphics[width=.55\linewidth]{img/linsvm.pdf}}
     \quad\quad\quad
 		\rowcolors{1}{}{gray!10}
     \begin{tabular}[b]{cc}
 			\toprule
       Clusters (\( k \)) & Accuracy \\
       \midrule
-      24  & tbd \\
-      48  & 0.39 \\
-      96  & tbd \\
-      192 & tbd \\
+      24  & 0.21 \\
+      48  & tbd \\
+      96  & 0.39 \\
       \bottomrule
     \end{tabular}
   \end{figure}
 
+  The linear SVM approach shows a sensible improvement with respect to the nearest neighbour classifier. In particular, outdoor settings such as \textit{forest}, \textit{mountain} and \textit{suburb} are quite accurately labelled.
+  
 
 
-  \section*{6. and 7. Gaussian kernel SVM}
+
+  \section*{6. and 7. Gaussian kernel SVM (optional)}
 
   A multi-class SVM classifier with Gaussian kernel was implemented as well. In this case, the \texttt{sklearn.multiclass.OneVsRestClassifier} function, fed with \texttt{skearn.svm.SVC(kernel = precomputed)}, is employed to build the classifier. In order to fit such classifier on the training data, the Gram matrix of the training set must be provided as an argument. The proposed implementation of the Gram matrix takes two sets of histograms as arguments; by default it uses a Gaussian kernel and the \( \chi^2 \) distance, but Earth Mover Distance was tested as well. The predictions are carried out passing the Gram matrix build over both train and test histograms to the classifier.
 
@@ -144,29 +147,30 @@
 
   \begin{figure}[H]
     \centering
-    \caption*{Confusion matrix (for \( k = 48 \)) and accuracy for different values of \( k \).}
-    \raisebox{-6em}{\includegraphics[width=.55\linewidth]{img/gaussvm.pdf}}
+    \caption*{Confusion matrix (for \( k = 96 \)) and accuracy for different values of \( k \).}
+    \raisebox{-7em}{\includegraphics[width=.55\linewidth]{img/gaussvm.pdf}}
     \quad\quad\quad
 		\rowcolors{1}{}{gray!10}
     \begin{tabular}[b]{cc}
 			\toprule
       Clusters (\( k \)) & Accuracy \\
       \midrule
-      24  & tbd \\
-      48  & 0.42 \\
-      96  & tbd \\
-      192 & tbd \\
+      24  & 0.39 \\
+      48  & tbd \\
+      96  & 0.42 \\
       \bottomrule
     \end{tabular}
   \end{figure}
 
-  \textcolor{red}{0.21 for edm distance with k = 48}
+  The Gaussian SVM apprach with \( \chi^2 \) distance provides better results than the linear SVM. In particular the \textit{suburb} and \textit{forest} classes are almost perfectly labelled. The classifier still struggles with indoor settings such as \textit{bedroom}, \textit{kitchen}, and \textit{living room}.
+
+  A Gaussian SVM with Earth Mover Distance was tested as well: it delivers much worse results, reaching \( 0.21 \) accuracy for \( k = 96 \).
 
 
   
-  \section*{8. Error Correcting Output Code SVM}
+  \section*{8. ECOC SVM (optional)}
 
-  Error Correcting Output Code is an ensemble method for multi-class classification. The approach, detailed in \cite{dietterich1994solving} and \cite{james1998error}, combines many binary classifiers in order to solve a multi-class problem. In particular, each class is represented by a binary string where the length of the string corresponds to the number of binary classifiers; such representation is stored in a binary coding matrix:
+  Error Correcting Output Code (ECOC) is an ensemble method for multi-class classification. The approach, detailed in \cite{dietterich1994solving} and \cite{james1998error}, combines many binary classifiers in order to solve a multi-class problem. In particular, each class is represented by a binary string where the length of the string corresponds to the number of binary classifiers; such representation is stored in a binary coding matrix:
 
 	\begin{table}[H] 
 		\centering
@@ -186,33 +190,70 @@
 
   Following the proposed example, the first binary classifier \( Z_1 \) should learn the representation \( 1 \) for class \( 0 \), representation \( 0 \) for class \( 1 \), and so on. Once all the classifiers have been fitted they can be evaluated on a test observation to produce a bit representation of it. The class whose expression (in the coding matrix) is the closest to the test observation representation is chosen as the predicted label.
 
-  The coding matrix can be manually constructed to maximise expressiveness (guaranteeing a good separation between the classes representations) but, particularly for a large number of classes, a randomly generated matrix performs well. As the authors of \cite{james1998error} argue, the main benefit of the approach is variance reduction via model averaging, which is comparable for optimally constructed and random coding matrices. The approach is not prone to overfitting and a large number of classifiers provides better results.
+  The coding matrix can be manually constructed to maximise expressiveness (guaranteeing a good separation between the classes representations) but, particularly for a large number of classes, a randomly generated matrix performs well. As the authors of \cite{james1998error} argue, the main benefit of the approach is variance reduction via model averaging, which is comparable for optimally constructed and random coding matrices. The approach is not prone to overfitting and a large number of classifiers should provide better results.
 
   In the proposed implementation the coding matrix is randomly generated and the distance between binary strings is computed using the Hamming distance.
 
 
   \subsection*{Results}
 
-  Plot varying B.
+  \begin{figure}[H]
+    \centering
+    \caption*{ECOC classifier (for \( k = 96 \)) for a different number of binary classifiers}
+    \includegraphics[width=.6\linewidth]{img/ecocb.pdf}
+  \end{figure}
+
+  As expected, increasing the number of binary classifiers tends to increase the test accuracy (repeating the measure multiple times would result in a smoother line). For the tested cases there is no sign of overfitting for a large number of classifiers.
+
 
   \begin{figure}[H]
     \centering
-    \caption*{Confusion matrix (for \( k = 48 \)) and accuracy for different values of \( k \). \( 100 \) binary classifiers.}
-    \raisebox{-6em}{\includegraphics[width=.55\linewidth]{img/ecoc.pdf}}
+    \caption*{Confusion matrix (for \( k = 96 \)) and accuracy for different values of \( k \). \( 100 \) binary classifiers.}
+    \raisebox{-7em}{\includegraphics[width=.55\linewidth]{img/ecoc.pdf}}
     \quad\quad\quad
 		\rowcolors{1}{}{gray!10}
     \begin{tabular}[b]{cc}
 			\toprule
       Clusters (\( k \)) & Accuracy \\
       \midrule
-      24  & tbd \\
-      48  & 0.48 \\
-      96  & tbd \\
-      192 & tbd \\
+      24  & 0.40 \\
+      48  & tbd \\
+      96  & 0.49 \\
       \bottomrule
     \end{tabular}
   \end{figure}
 
+  The ECOC approach delivers pretty good results. It should be noted how some problematic classes such as \textit{bedroom} and \textit{open country} are now better predicted.
+
+
+
+  \section*{9. Soft assignment (optional)}
+
+  This section implements an alternative approach to the histogram building step. With reference to Section 2, until now histograms were built using \textit{hard} assignment: for each test word, only the bin corresponding to the closest dictionary word is incremented. Alternatively, a \textit{soft} assignment technique can be adopted. This approach is detailed in \cite{van2008kernel} and consists in estimating the probability density function of a test image over the visual dictionary using kernel density estimation. In particular, a Gaussian kernel with Euclidean distance has been used. The value of the scale parameter \( \sigma \), which determines the size of the kernel and the degree of similarity between the samples, should be tuned using cross-validation; here cross-validation was not performed and \( \sigma = 150 \) is used (it seems to provide good results).
+
+  This approach should provide a better treatment of outlier descriptors, which will poorly contribute to the histograms, and of dubious descriptors (close to more than one dictionary word), which will substantially contribute to more than one bin.
+
+
+  \subsection*{Results}
+
+  The results for a Gaussian kernel SVM with \( \chi^2 \) distance show a sensible improvement over the hard-assigned histograms models, providing the best results among the tested approaches. It should be pointed out that this approach suffers from a considerably large overhead due to the necessity of recomputing all the histograms.
+
+  \begin{figure}[H]
+    \centering
+    \caption*{Confusion matrix (for \( k = 96 \)) and accuracy for different values of \( k \).}
+    \raisebox{-7em}{\includegraphics[width=.55\linewidth]{img/soft.pdf}}
+    \quad\quad\quad
+		\rowcolors{1}{}{gray!10}
+    \begin{tabular}[b]{cc}
+			\toprule
+      Clusters (\( k \)) & Accuracy \\
+      \midrule
+      24  & 0.42 \\
+      48  & 0.49 \\
+      96  & 0.51 \\
+      \bottomrule
+    \end{tabular}
+  \end{figure}
 
 
 
