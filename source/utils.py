@@ -87,11 +87,13 @@ def plot_confusion_matrix(true_labels, predicted_labels,
     ax.set_ylabel("True", fontweight = 'bold')
     ax.set_title(title, fontweight = 'bold')
     
-    print("Accuracy: {}".format(np.sum(np.diag(conf_matrix)) /
-                                       np.sum(conf_matrix)))
+    accuracy = np.sum(np.diag(conf_matrix)) / np.sum(conf_matrix)
+    
+    print("Accuracy: {}".format(accuracy))
 
     # Save and show.
     if filename:
-        fig.savefig(filename, bbox_inches='tight')
+        fig.savefig('../plots/' + filename, bbox_inches = 'tight')
     plt.show()
     
+    return accuracy

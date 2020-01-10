@@ -181,3 +181,86 @@ def compute_histogram(descriptors_df, kmeans):
     histograms = list(histograms[row] for row in range(len(histograms)))
     
     return histograms
+
+
+
+def soft_assignment_gaussian_kernel(word_1, word_2, sigma = 150):
+    """Kernel density estimation between two visual words using
+    a Gaussian kernel with Euclidean distance.
+
+    Note
+    ----
+    The default value for sigma is taken from:
+    [Van Gemert et al, 2008]
+
+    Parameters
+    ----------
+    hist_1 : np.array
+        First visual word.
+    hist_2 : np.array
+        Second visual word.
+    sigma : int
+        Sigma parameter for a Gaussian kernel.
+
+    Returns
+    -------
+    np.array
+        The value of the kernel for the two visual words.
+
+    """
+    
+    distance = np.linalg.norm(word_1 - word_2)
+    c = (1 / (sigma * ((2 * np.pi)**(1 / 2))))
+         
+    return c * np.exp(- distance ** 2 / (2 * (sigma**2)))
+
+
+
+def compute_kernel_codebook(descriptors_df, kmeans):
+    """Computes the visual words histograms for the provided dataset
+    using a soft-assignment approach.
+
+    Extracts visual dictionary from a KMeans object and uses them as a 
+    dictionary. For each image, a histogram over the dictionary is built:
+    the probability density function over the dictionary is estimated
+    using a Gaussian kernel with Euclidean distance.
+    
+    Parameters
+    ----------
+    descriptors_df
+        Dataframe containing descriptors.
+    kmeans
+        KMeans object containing dictionary words.
+
+    Returns
+    -------
+    list
+        List of arrays, each array is a histogram.
+
+    """
+    
+    # Estract visual words (centroids) from kmeans computation.
+    dictionary = kmeans.cluster_centers_
+    
+    num_images = len(descriptors_df['image_id'])
+    histograms = np.zeros((num_images, len(dictionary)))
+    
+    # For every image.
+    for index, row in descriptors_df.iterrows():
+        # For every descriptor.
+        for descriptor in row['descriptor']:
+            # Compute contributions to each bin.
+            contributions = [soft_assignment_gaussian_kernel(descriptor, word)
+                             for word in dictionary]
+            # Sum contributions.
+            histograms[index] += contributions
+            
+    # Compute norms and normalisation.
+    norm = np.sum(histograms, axis = 1).reshape(num_images, 1)
+    histograms = histograms / norm
+    
+    # More convenient format as list of arrays.
+    histograms = list(histograms[row] for row in range(len(histograms)))
+    
+    return histograms
+

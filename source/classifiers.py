@@ -14,7 +14,7 @@ from sklearn.multiclass import OneVsRestClassifier
 
 
 def earth_mover_distance(hist_1, hist_2):
-    """Implements the Earth Mover Distance
+    """Implements the Earth Mover Distance between histograms.
 
     Parameters
     ----------
@@ -35,7 +35,7 @@ def earth_mover_distance(hist_1, hist_2):
 
 
 def chi_2_distance(hist_1, hist_2):
-    """Implements the Chi Squared distance.
+    """Implements the Chi Squared distance between histograms.
 
     Note
     ----
